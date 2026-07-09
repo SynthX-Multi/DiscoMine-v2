@@ -42,7 +42,6 @@ const client = new Client({
 let panelMessage = null;
 let panelRefreshQueue = Promise.resolve();
 
-
 async function clearSlashCommands() {
   const rest = new REST({ version: '10' }).setToken(config.discord.token);
   try {
