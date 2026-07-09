@@ -15,15 +15,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 const {
-  Client, GatewayIntentBits, REST, Routes,
-  SlashCommandBuilder, EmbedBuilder, ActivityType,
-  Events, Colors
+  Client,
+  GatewayIntentBits,
+  REST,
+  Routes,
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActivityType,
+  Events,
+  Colors,
 } = require('discord.js');
 
 const config = require('./config');
 const mc = require('./minecraft');
+const {
+  PANEL_TITLE,
+  buildPanelEmbed,
+  buildPanelRow,
+} = require('./panel');
 
 const client = new Client({
   intents: [
@@ -44,7 +54,10 @@ const commands = [
   new SlashCommandBuilder()
     .setName('status')
     .setDescription('checks how the bot is doing'),
-].map(cmd => cmd.toJSON());
+].map((cmd) => cmd.toJSON());
+
+let panelMessage = null;
+let panelRefreshQueue = Promise.resolve();
 
 async function registerCommands() {
   const rest = new REST({ version: '10' }).setToken(config.discord.token);
@@ -56,94 +69,96 @@ async function registerCommands() {
     );
     console.log('[Discord] slash commands registered!');
   } catch (err) {
-    console.error('[Discord] failed to register commands:', err.message);
+    console.error('[Discord] failed to register slash commands:', err.message);
   }
 }
 
-function buildStatusEmbed(status, title, color) {
-  let botStatusText;
-  if (status.connected) {
-    botStatusText = '🟢 **online and chilling**';
-  } else if (status.leftForPlayers) {
-    botStatusText = '🟡 **waiting for everyone to leave**';
-  } else {
-    botStatusText = '🔴 **offline**';
+function buildStatusEmbed(status) {
+  return buildPanelEmbed(status, config);
+}
+
+function buildStatusCard(status) {
+  return {
+    embeds: [buildStatusEmbed(status)],
+    components: [buildPanelRow(status)],
+  };
+}
+
+async function fetchStatusChannel() {
+  if (!config.discord.statusChannelId) return null;
+  const channel = await client.channels.fetch(config.discord.statusChannelId).catch(() => null);
+  if (!channel || !channel.isTextBased()) return null;
+  return channel;
+}
+
+async function findExistingPanel(channel) {
+  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
+  if (!messages) return null;
+
+  const found = messages.find((message) => {
+    if (message.author?.id !== client.user?.id) return false;
+    const embed = message.embeds?.[0];
+    return embed?.title === PANEL_TITLE;
+  });
+
+  return found || null;
+}
+
+async function refreshStatusPanel() {
+  const channel = await fetchStatusChannel();
+  if (!channel || !client.user) return null;
+
+  const status = mc.getStatus();
+  const payload = buildStatusCard(status);
+
+  if (!panelMessage) {
+    panelMessage = await findExistingPanel(channel);
   }
 
-  return new EmbedBuilder()
-    .setTitle(title)
-    .setColor(color)
-    .addFields(
-      {
-        name: '🌐 server',
-        value: `\`${status.server}\``,
-        inline: true,
-      },
-      {
-        name: '🔗 bot status',
-        value: botStatusText,
-        inline: true,
-      },
-      {
-        name: '👥 players online',
-        value: `**${status.playerCount}**`,
-        inline: true,
-      },
-      {
-        name: '⏱ uptime',
-        value: status.connected ? formatUptime(status.uptime) : '—',
-        inline: true,
-      },
-      {
-        name: '🔁 rejoin attempts',
-        value: `${status.reconnectAttempts}`,
-        inline: true,
-      },
-      {
-        name: '🤖 bot name',
-        value: `\`${config.bot.username}\``,
-        inline: true,
-      },
-    )
-    .setFooter({ text: 'DiscoMine by akahn' })
-    .setTimestamp();
-}
-
-function formatUptime(seconds) {
-  if (!seconds) return '0s';
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  return [h && `${h}h`, m && `${m}m`, `${s}s`].filter(Boolean).join(' ');
-}
-
-async function notifyChannel(embed) {
-  if (!config.discord.statusChannelId) return;
   try {
-    const channel = await client.channels.fetch(config.discord.statusChannelId).catch(() => null);
-    if (channel && channel.isTextBased()) {
-      await channel.send({ embeds: [embed] });
+    if (panelMessage) {
+      await panelMessage.edit(payload);
+      return panelMessage;
     }
-  } catch (_) { }
+  } catch (_) {
+    panelMessage = null;
+  }
+
+  try {
+    panelMessage = await channel.send(payload);
+    return panelMessage;
+  } catch (err) {
+    console.error('[Panel] failed to render status panel:', err.message);
+    return null;
+  }
+}
+
+function schedulePanelRefresh() {
+  panelRefreshQueue = panelRefreshQueue
+    .then(() => refreshStatusPanel())
+    .catch((err) => {
+      console.error('[Panel] refresh failed:', err.message);
+    });
+  return panelRefreshQueue;
 }
 
 function updatePresence() {
   if (!client.user) return;
   const status = mc.getStatus();
 
-  if (status.connected) {
+  if (status.mode === 'online') {
     client.user.setPresence({
       status: 'online',
       activities: [{
-        name: `chilling alone • ${config.server.ip}`,
+        name: `holding slot on ${config.server.ip}`,
         type: ActivityType.Watching,
       }],
     });
-  } else if (status.leftForPlayers) {
+  } else if (status.mode === 'reconnecting') {
     client.user.setPresence({
       status: 'idle',
       activities: [{
-        name: `waiting for ${status.playerCount} players to leave`,
+        name: `reconnecting to ${config.server.ip}`,
         type: ActivityType.Watching,
       }],
     });
@@ -151,79 +166,85 @@ function updatePresence() {
     client.user.setPresence({
       status: 'dnd',
       activities: [{
-        name: 'offline — type /start',
+        name: 'offline — press Start Bot',
         type: ActivityType.Custom,
       }],
     });
   }
 }
 
-mc.emitter.on('connected', ({ version }) => {
+mc.emitter.on('stateChanged', () => {
   updatePresence();
-  const status = mc.getStatus();
-  notifyChannel(
-    buildStatusEmbed(status, '🟢 bot connected, server is empty', Colors.Green)
-  );
+  schedulePanelRefresh();
+});
+
+mc.emitter.on('connected', ({ version }) => {
+  console.log(`[Bot] connected using version ${version}`);
 });
 
 mc.emitter.on('leftForPlayers', (count) => {
-  updatePresence();
-  notifyChannel(
-    new EmbedBuilder()
-      .setTitle('🟡 bot left, players online')
-      .setDescription(
-        `someone is in the server. leaving to save energy, rejoining ASAP once they leave.`
-      )
-      .setColor(Colors.Yellow)
-      .setTimestamp()
-  );
+  console.log(`[Bot] left because ${count} player(s) were online`);
 });
 
 mc.emitter.on('kicked', (reason) => {
-  updatePresence();
-  notifyChannel(
-    new EmbedBuilder()
-      .setTitle('⚠️ bot got kicked')
-      .setDescription(`Reason: \`${reason}\`\ntryna rejoin in 8s...`)
-      .setColor(Colors.Orange)
-      .setTimestamp()
-  );
+  console.log(`[Bot] kicked: ${reason}`);
 });
 
 mc.emitter.on('kicked_reconnect', () => {
-  updatePresence();
-  notifyChannel(
-    new EmbedBuilder()
-      .setTitle('⚡ bot reconnecting')
-      .setDescription(
-        'bot got disconnected or crashed, putting it back ASAP (8s)...'
-      )
-      .setColor(Colors.Orange)
-      .setTimestamp()
-  );
+  console.log('[Bot] reconnecting after disconnect');
 });
 
 mc.emitter.on('disconnected', (reason) => {
-  updatePresence();
+  console.log(`[Bot] disconnected: ${reason || 'unknown'}`);
 });
 
 mc.emitter.on('reconnecting', ({ attempt, delayMs }) => {
-  updatePresence();
   console.log(`[Bot] rejoin attempt #${attempt} in ${(delayMs / 1000).toFixed(1)}s`);
 });
 
 mc.emitter.on('stopped', () => {
-  updatePresence();
-  notifyChannel(
-    new EmbedBuilder()
-      .setTitle('🔴 bot stopped')
-      .setDescription('stopped the bot. type /start to put it back online')
-      .setColor(Colors.Red)
-      .setTimestamp()
-  );
+  console.log('[Bot] stopped');
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
+  if (interaction.isButton()) {
+    const status = mc.getStatus();
+
+    if (interaction.customId === 'panel_start') {
+      if (status.mode !== 'offline') {
+        return interaction.reply({
+          content: `The bot is already ${status.mode}.`,
+          ephemeral: true,
+        });
+      }
+
+      mc.start();
+      await schedulePanelRefresh();
+
+      return interaction.reply({
+        content: 'Start requested. The status panel will update as the bot connects.',
+        ephemeral: true,
+      });
+    }
+
+    if (interaction.customId === 'panel_stop') {
+      if (status.mode === 'offline') {
+        return interaction.reply({
+          content: 'The bot is already offline.',
+          ephemeral: true,
+        });
+      }
+
+      mc.stop();
+      await schedulePanelRefresh();
+
+      return interaction.reply({
+        content: 'Stop requested. The status panel has been updated.',
+        ephemeral: true,
+      });
+    }
+  }
+
   if (!interaction.isChatInputCommand()) return;
 
   const { commandName, user } = interaction;
@@ -232,86 +253,77 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (commandName === 'start') {
     const status = mc.getStatus();
 
-    if (status.connected) {
+    if (status.mode !== 'offline') {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle('⚠️ bot is already running')
-            .setDescription('the bot is already in or checking')
-            .setColor(Colors.Yellow)
+            .setTitle('⚠️ bot is already active')
+            .setDescription(`Current state: **${status.mode}**`)
+            .setColor(Colors.Yellow),
         ],
         ephemeral: true,
       });
     }
 
-    await interaction.deferReply();
     mc.start();
+    await schedulePanelRefresh();
 
-    return interaction.editReply({
+    return interaction.reply({
       embeds: [
         new EmbedBuilder()
           .setTitle('🚀 joining the server...')
           .setDescription(
-            `starting the bot now!\n\ntrying to join \`${config.server.ip}\`...\n(might take like 2 minutes if the server was sleeping)\n\nit'll check if the server is empty, leave if someone is on, and join back when they leave`
+            `Starting the bot now.
+
+Trying to join \`${config.server.ip}\`...
+It will update the panel automatically once it is online.`
           )
           .addFields(
-            { name: '🤖 bot name', value: `\`${config.bot.username}\``, inline: true },
-            { name: '🌐 server', value: `\`${config.server.ip}\``, inline: true },
+            { name: 'Bot Name', value: `\`${config.bot.username}\``, inline: true },
+            { name: 'Server', value: `\`${config.server.ip}\``, inline: true },
           )
           .setColor(Colors.Green)
-          .setFooter({ text: 'leaves for players, rejoins ASAP when empty' })
+          .setFooter({ text: 'DiscoMine control panel' })
           .setTimestamp(),
       ],
     });
   }
 
-  else if (commandName === 'stop') {
+  if (commandName === 'stop') {
     const status = mc.getStatus();
 
-    if (!status.connected) {
+    if (status.mode === 'offline') {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
             .setTitle('ℹ️ bot is already offline')
-            .setDescription('the bot is not in the server right now')
-            .setColor(Colors.Blurple)
+            .setDescription('The bot is not running right now.')
+            .setColor(Colors.Blurple),
         ],
         ephemeral: true,
       });
     }
 
-    await interaction.deferReply();
     mc.stop();
+    await schedulePanelRefresh();
 
-    return interaction.editReply({
+    return interaction.reply({
       embeds: [
         new EmbedBuilder()
           .setTitle('🔴 bot stopped')
-          .setDescription(
-            `bot left. use /start to run it again`
-          )
+          .setDescription('The bot has been stopped and the panel has been updated.')
           .setColor(Colors.Red)
           .setTimestamp(),
       ],
     });
   }
 
-  else if (commandName === 'status') {
+  if (commandName === 'status') {
     const status = mc.getStatus();
-    let title;
-    let color;
-    if (status.connected) {
-      title = '🟢 bot status: online';
-      color = Colors.Green;
-    } else if (status.leftForPlayers) {
-      title = '🟡 bot status: standby';
-      color = Colors.Yellow;
-    } else {
-      title = '🔴 bot status: offline';
-      color = Colors.DarkGrey;
-    }
     return interaction.reply({
-      embeds: [buildStatusEmbed(status, title, color)],
+      embeds: [buildStatusEmbed(status)],
+      components: [buildPanelRow(status)],
+      ephemeral: true,
     });
   }
 });
@@ -319,11 +331,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
 client.once(Events.ClientReady, async (c) => {
   console.log(`[Discord] logged in as ${c.user.tag}`);
   await registerCommands();
+
   updatePresence();
-
-  console.log('[Bot] starting bot...');
   mc.start();
+  await schedulePanelRefresh();
 
+  console.log('[Bot] starting live status panel...');
   setInterval(updatePresence, 60_000);
 });
 
