@@ -18,13 +18,10 @@
 const {
   Client,
   GatewayIntentBits,
-  REST,
-  Routes,
-  SlashCommandBuilder,
-  EmbedBuilder,
   ActivityType,
   Events,
-  Colors,
+  REST,
+  Routes,
 } = require('discord.js');
 
 const config = require('./config');
@@ -42,34 +39,21 @@ const client = new Client({
   ],
 });
 
-const commands = [
-  new SlashCommandBuilder()
-    .setName('start')
-    .setDescription('starts the bot (leaves when someone is on, joins back when empty)'),
-
-  new SlashCommandBuilder()
-    .setName('stop')
-    .setDescription('stops the bot'),
-
-  new SlashCommandBuilder()
-    .setName('status')
-    .setDescription('checks how the bot is doing'),
-].map((cmd) => cmd.toJSON());
-
 let panelMessage = null;
 let panelRefreshQueue = Promise.resolve();
 
-async function registerCommands() {
+
+async function clearSlashCommands() {
   const rest = new REST({ version: '10' }).setToken(config.discord.token);
   try {
-    console.log('[Discord] Registering slash commands...');
+    console.log('[Discord] removing slash commands...');
     await rest.put(
       Routes.applicationGuildCommands(config.discord.clientId, config.discord.guildId),
-      { body: commands },
+      { body: [] },
     );
-    console.log('[Discord] slash commands registered!');
+    console.log('[Discord] slash commands removed.');
   } catch (err) {
-    console.error('[Discord] failed to register slash commands:', err.message);
+    console.error('[Discord] failed to remove slash commands:', err.message);
   }
 }
 
@@ -98,7 +82,7 @@ async function findExistingPanel(channel) {
   const found = messages.find((message) => {
     if (message.author?.id !== client.user?.id) return false;
     const embed = message.embeds?.[0];
-    return embed?.title === PANEL_TITLE;
+    return typeof embed?.title === 'string' && embed.title.endsWith(PANEL_TITLE);
   });
 
   return found || null;
@@ -207,60 +191,14 @@ mc.emitter.on('stopped', () => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-  if (interaction.isButton()) {
-    const status = mc.getStatus();
+  if (!interaction.isButton()) return;
 
-    if (interaction.customId === 'panel_start') {
-      if (status.mode !== 'offline') {
-        return interaction.reply({
-          content: `The bot is already ${status.mode}.`,
-          ephemeral: true,
-        });
-      }
+  const status = mc.getStatus();
 
-      mc.start();
-      await schedulePanelRefresh();
-
-      return interaction.reply({
-        content: 'Start requested. The status panel will update as the bot connects.',
-        ephemeral: true,
-      });
-    }
-
-    if (interaction.customId === 'panel_stop') {
-      if (status.mode === 'offline') {
-        return interaction.reply({
-          content: 'The bot is already offline.',
-          ephemeral: true,
-        });
-      }
-
-      mc.stop();
-      await schedulePanelRefresh();
-
-      return interaction.reply({
-        content: 'Stop requested. The status panel has been updated.',
-        ephemeral: true,
-      });
-    }
-  }
-
-  if (!interaction.isChatInputCommand()) return;
-
-  const { commandName, user } = interaction;
-  console.log(`[Discord] /${commandName} by ${user.tag}`);
-
-  if (commandName === 'start') {
-    const status = mc.getStatus();
-
+  if (interaction.customId === 'panel_start') {
     if (status.mode !== 'offline') {
       return interaction.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle('⚠️ bot is already active')
-            .setDescription(`Current state: **${status.mode}**`)
-            .setColor(Colors.Yellow),
-        ],
+        content: `The bot is already ${status.mode}.`,
         ephemeral: true,
       });
     }
@@ -269,37 +207,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await schedulePanelRefresh();
 
     return interaction.reply({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle('🚀 joining the server...')
-          .setDescription(
-            `Starting the bot now.
-
-Trying to join \`${config.server.ip}\`...
-It will update the panel automatically once it is online.`
-          )
-          .addFields(
-            { name: 'Bot Name', value: `\`${config.bot.username}\``, inline: true },
-            { name: 'Server', value: `\`${config.server.ip}\``, inline: true },
-          )
-          .setColor(Colors.Green)
-          .setFooter({ text: 'DiscoMine control panel' })
-          .setTimestamp(),
-      ],
+      content: 'Start requested. The status panel will update as the bot connects.',
+      ephemeral: true,
     });
   }
 
-  if (commandName === 'stop') {
-    const status = mc.getStatus();
-
+  if (interaction.customId === 'panel_stop') {
     if (status.mode === 'offline') {
       return interaction.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle('ℹ️ bot is already offline')
-            .setDescription('The bot is not running right now.')
-            .setColor(Colors.Blurple),
-        ],
+        content: 'The bot is already offline.',
         ephemeral: true,
       });
     }
@@ -308,21 +224,7 @@ It will update the panel automatically once it is online.`
     await schedulePanelRefresh();
 
     return interaction.reply({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle('🔴 bot stopped')
-          .setDescription('The bot has been stopped and the panel has been updated.')
-          .setColor(Colors.Red)
-          .setTimestamp(),
-      ],
-    });
-  }
-
-  if (commandName === 'status') {
-    const status = mc.getStatus();
-    return interaction.reply({
-      embeds: [buildStatusEmbed(status)],
-      components: [buildPanelRow(status)],
+      content: 'Stop requested. The status panel has been updated.',
       ephemeral: true,
     });
   }
@@ -330,7 +232,8 @@ It will update the panel automatically once it is online.`
 
 client.once(Events.ClientReady, async (c) => {
   console.log(`[Discord] logged in as ${c.user.tag}`);
-  await registerCommands();
+
+  await clearSlashCommands();
 
   updatePresence();
   mc.start();
