@@ -42,6 +42,7 @@ const client = new Client({
 let panelMessage = null;
 let panelRefreshQueue = Promise.resolve();
 
+
 async function clearSlashCommands() {
   const rest = new REST({ version: '10' }).setToken(config.discord.token);
   try {
@@ -141,7 +142,9 @@ function updatePresence() {
     client.user.setPresence({
       status: 'idle',
       activities: [{
-        name: `reconnecting to ${config.server.ip}`,
+        name: status.waitingForEmpty
+          ? `waiting for players to leave on ${config.server.ip}`
+          : `reconnecting to ${config.server.ip}`,
         type: ActivityType.Watching,
       }],
     });
@@ -194,51 +197,38 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   const status = mc.getStatus();
 
-  try {
-    if (!interaction.deferred && !interaction.replied) {
-      await interaction.deferReply({ ephemeral: true });
-    }
-
-    if (interaction.customId === 'panel_start') {
-      if (status.mode !== 'offline') {
-        return interaction.editReply({
-          content: `The bot is already ${status.mode}.`,
-        });
-      }
-
-      mc.start();
-      await schedulePanelRefresh();
-
-      return interaction.editReply({
-        content: 'Start requested. Updating panel status...',
+  if (interaction.customId === 'panel_start') {
+    if (status.mode !== 'offline') {
+      return interaction.reply({
+        content: `The bot is already ${status.waitingForEmpty ? 'waiting for players to leave' : status.mode}.`,
+        ephemeral: true,
       });
     }
 
-    if (interaction.customId === 'panel_stop') {
-      if (status.mode === 'offline') {
-        return interaction.editReply({
-          content: 'The bot is already offline.',
-        });
-      }
+    mc.start();
+    await schedulePanelRefresh();
 
-      mc.stop();
-      await schedulePanelRefresh();
+    return interaction.reply({
+      content: 'Start requested. The bot will now check whether the server is empty and wait if needed.',
+      ephemeral: true,
+    });
+  }
 
-      return interaction.editReply({
-        content: 'Stop requested. Updating panel status...',
+  if (interaction.customId === 'panel_stop') {
+    if (status.mode === 'offline') {
+      return interaction.reply({
+        content: 'The bot is already offline.',
+        ephemeral: true,
       });
     }
-  } catch (err) {
-    console.error('[Discord] button interaction failed:', err.message);
 
-    if (!interaction.replied) {
-      try {
-        await interaction.reply({
-          content: 'Something went wrong while updating the panel.',
-          ephemeral: true,
-        });
-      } catch (_) { }
-    }
+    mc.stop();
+    await schedulePanelRefresh();
+
+    return interaction.reply({
+      content: 'Stop requested. The status panel has been updated.',
+      ephemeral: true,
+    });
   }
 });
 
