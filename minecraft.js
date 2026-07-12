@@ -81,6 +81,68 @@ function getMode() {
   return 'offline';
 }
 
+function pingServerStatus() {
+  return new Promise((resolve, reject) => {
+    minecraftProtocol.ping(
+      {
+        host: config.server.ip,
+        port: config.server.port,
+      },
+      (err, data) => {
+        if (err) return reject(err);
+        const playerCount = Number(data?.players?.online ?? data?.playerCount ?? 0) || 0;
+        const maxPlayers = Number(data?.players?.max ?? data?.maxPlayers ?? 0) || 0;
+        resolve({
+          online: !!data,
+          playerCount,
+          maxPlayers,
+          raw: data,
+        });
+      },
+    );
+  });
+}
+
+async function startWaitingForEmptyServer() {
+  if (state.manualStop || state.connected) return;
+
+  clearTimers();
+  state.connecting = false;
+  state.isReconnecting = true;
+  state.waitingForEmpty = true;
+  signalStateChange();
+
+  const poll = async () => {
+    if (state.manualStop || state.connected) return;
+
+    try {
+      const status = await pingServerStatus();
+      state.playerCount = status.playerCount;
+      signalStateChange();
+
+      if (status.online && status.playerCount <= 0) {
+        log('Bot', 'server is empty again, joining now');
+        state.waitingForEmpty = false;
+        state.isReconnecting = false;
+        signalStateChange();
+        createBot();
+        return;
+      }
+
+      log('Bot', `waiting for players to leave (${status.playerCount} online)`);
+    } catch (err) {
+      log('Bot', `status ping failed while waiting: ${err.message}`);
+    }
+
+    if (!state.manualStop && !state.connected) {
+      state.statusPollTimer = setTimeout(poll, 8_000);
+    }
+  };
+
+  await poll();
+}
+
+
 async function start() {
   if (state.connected || state.connecting || state.isReconnecting || state.waitingForEmpty) {
     log('Bot', 'already running or waiting');
