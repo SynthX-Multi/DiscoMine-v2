@@ -27,7 +27,7 @@ function formatUptime(seconds) {
   return [h && `${h}h`, m && `${m}m`, s && `${s}s`].filter(Boolean).join(' ');
 }
 
-function getModeMeta(mode) {
+function getModeMeta(mode, status = {}) {
   switch (mode) {
     case 'online':
       return {
@@ -41,7 +41,9 @@ function getModeMeta(mode) {
         label: 'Reconnecting',
         emoji: '🟡',
         color: Colors.Yellow,
-        blurb: 'Bot is trying to connect again right now.',
+        blurb: status.waitingForEmpty
+          ? 'Bot is waiting for players to leave before rejoining.'
+          : 'Bot is trying to connect again right now.',
       };
     case 'offline':
     default:
@@ -56,7 +58,7 @@ function getModeMeta(mode) {
 
 function buildPanelEmbed(status, config) {
   const mode = status.mode || 'offline';
-  const meta = getModeMeta(mode);
+  const meta = getModeMeta(mode, status);
   const uptime = mode === 'online' ? formatUptime(status.uptime) : '—';
 
   return new EmbedBuilder()
@@ -96,6 +98,11 @@ function buildPanelEmbed(status, config) {
         value: `${meta.emoji} **${meta.label}**`,
         inline: true,
       },
+      ...(status.waitingForEmpty ? [{
+        name: 'Waiting For',
+        value: 'Players to leave',
+        inline: true,
+      }] : []),
     )
     .setFooter({ text: 'made by akahn • DiscoMine control panel' })
     .setTimestamp();
