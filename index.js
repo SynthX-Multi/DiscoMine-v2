@@ -23,6 +23,8 @@ const {
   REST,
   Routes,
 } = require('discord.js');
+const fs = require('fs/promises');
+const path = require('path');
 
 const config = require('./config');
 const mc = require('./minecraft');
@@ -41,6 +43,7 @@ const client = new Client({
 
 let panelMessage = null;
 let panelRefreshQueue = Promise.resolve();
+const PANEL_STATE_FILE = path.join(__dirname, '.panel-state.json');
 
 
 async function clearSlashCommands() {
@@ -75,17 +78,83 @@ async function fetchStatusChannel() {
   return channel;
 }
 
-async function findExistingPanel(channel) {
-  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
-  if (!messages) return null;
+async function loadPanelState() {
+  try {
+    const raw = await fs.readFile(PANEL_STATE_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    return {
+      channelId: typeof parsed.channelId === 'string' ? parsed.channelId : null,
+      messageId: typeof parsed.messageId === 'string' ? parsed.messageId : null,
+    };
+  } catch {
+    return { channelId: null, messageId: null };
+  }
+}
 
-  const found = messages.find((message) => {
-    if (message.author?.id !== client.user?.id) return false;
-    const embed = message.embeds?.[0];
-    return typeof embed?.title === 'string' && embed.title.endsWith(PANEL_TITLE);
-  });
+async function savePanelState(channelId, messageId) {
+  try {
+    await fs.writeFile(
+      PANEL_STATE_FILE,
+      JSON.stringify({ channelId, messageId }, null, 2),
+      'utf8',
+    );
+  } catch (err) {
+    console.error('[Panel] failed to save panel state:', err.message);
+  }
+}
 
-  return found || null;
+async function fetchPanelCandidates(channel) {
+  const candidates = [];
+  let before = null;
+
+  for (let page = 0; page < 10; page += 1) {
+    const batch = await channel.messages.fetch({ limit: 100, ...(before ? { before } : {}) }).catch(() => null);
+    if (!batch || batch.size === 0) break;
+
+    for (const message of batch.values()) {
+      if (message.author?.id !== client.user?.id) continue;
+      const embed = message.embeds?.[0];
+      if (!embed?.title) continue;
+      if (embed.title === PANEL_TITLE || embed.title.endsWith(PANEL_TITLE)) {
+        candidates.push(message);
+      }
+    }
+
+    const last = batch.last();
+    if (!last) break;
+    before = last.id;
+
+    if (batch.size < 100) break;
+  }
+
+  candidates.sort((a, b) => b.createdTimestamp - a.createdTimestamp);
+  return candidates;
+}
+
+async function resolvePanelMessage(channel) {
+  const state = await loadPanelState();
+
+  if (state.channelId === channel.id && state.messageId) {
+    const remembered = await channel.messages.fetch(state.messageId).catch(() => null);
+    if (remembered?.author?.id === client.user?.id) {
+      const embed = remembered.embeds?.[0];
+      if (embed?.title === PANEL_TITLE || embed?.title?.endsWith(PANEL_TITLE)) {
+        return remembered;
+      }
+    }
+  }
+
+  const candidates = await fetchPanelCandidates(channel);
+  if (candidates.length > 0) {
+    const [latest, ...duplicates] = candidates;
+    for (const dup of duplicates) {
+      await dup.delete().catch(() => null);
+    }
+    await savePanelState(channel.id, latest.id);
+    return latest;
+  }
+
+  return null;
 }
 
 async function refreshStatusPanel() {
@@ -96,12 +165,13 @@ async function refreshStatusPanel() {
   const payload = buildStatusCard(status);
 
   if (!panelMessage) {
-    panelMessage = await findExistingPanel(channel);
+    panelMessage = await resolvePanelMessage(channel);
   }
 
   try {
     if (panelMessage) {
       await panelMessage.edit(payload);
+      await savePanelState(channel.id, panelMessage.id);
       return panelMessage;
     }
   } catch (_) {
@@ -110,6 +180,7 @@ async function refreshStatusPanel() {
 
   try {
     panelMessage = await channel.send(payload);
+    await savePanelState(channel.id, panelMessage.id);
     return panelMessage;
   } catch (err) {
     console.error('[Panel] failed to render status panel:', err.message);
@@ -236,6 +307,11 @@ client.once(Events.ClientReady, async (c) => {
   console.log(`[Discord] logged in as ${c.user.tag}`);
 
   await clearSlashCommands();
+
+  const channel = await fetchStatusChannel();
+  if (channel) {
+    panelMessage = await resolvePanelMessage(channel);
+  }
 
   updatePresence();
   mc.start();
