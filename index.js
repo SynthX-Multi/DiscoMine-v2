@@ -266,40 +266,62 @@ mc.emitter.on('stopped', () => {
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isButton()) return;
 
-  const status = mc.getStatus();
+  try {
+    const status = mc.getStatus();
 
-  if (interaction.customId === 'panel_start') {
-    if (status.mode !== 'offline') {
-      return interaction.reply({
-        content: `The bot is already ${status.waitingForEmpty ? 'waiting for players to leave' : status.mode}.`,
-        ephemeral: true,
+    // Acknowledge the click immediately so Discord doesn't time it out.
+    await interaction.deferReply({ ephemeral: true });
+
+    if (interaction.customId === 'panel_start') {
+      if (status.mode !== 'offline') {
+        return interaction.editReply({
+          content: `The bot is already ${status.waitingForEmpty ? 'waiting for players to leave' : status.mode}.`,
+        });
+      }
+
+      mc.start();
+      await schedulePanelRefresh();
+
+      return interaction.editReply({
+        content: 'Start requested. The bot will now check whether the server is empty and wait if needed.',
       });
     }
 
-    mc.start();
-    await schedulePanelRefresh();
+    if (interaction.customId === 'panel_stop') {
+      if (status.mode === 'offline') {
+        return interaction.editReply({
+          content: 'The bot is already offline.',
+        });
+      }
 
-    return interaction.reply({
-      content: 'Start requested. The bot will now check whether the server is empty and wait if needed.',
-      ephemeral: true,
-    });
-  }
+      mc.stop();
+      await schedulePanelRefresh();
 
-  if (interaction.customId === 'panel_stop') {
-    if (status.mode === 'offline') {
-      return interaction.reply({
-        content: 'The bot is already offline.',
-        ephemeral: true,
+      return interaction.editReply({
+        content: 'Stop requested. The status panel has been updated.',
       });
     }
 
-    mc.stop();
-    await schedulePanelRefresh();
-
-    return interaction.reply({
-      content: 'Stop requested. The status panel has been updated.',
-      ephemeral: true,
+    return interaction.editReply({
+      content: 'Unknown button action.',
     });
+  } catch (err) {
+    console.error('[Discord] button interaction failed:', err.message);
+
+    try {
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({
+          content: 'Something went wrong while processing that action.',
+        });
+      } else {
+        await interaction.reply({
+          content: 'Something went wrong while processing that action.',
+          ephemeral: true,
+        });
+      }
+    } catch (_) {
+      // Ignore follow-up interaction errors.
+    }
   }
 });
 
