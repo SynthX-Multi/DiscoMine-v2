@@ -263,75 +263,62 @@ mc.emitter.on('stopped', () => {
   console.log('[Bot] stopped');
 });
 
-async function sendPanelNotice(interaction, content) {
-  const payload = { content };
-
-  if (interaction.message?.reply) {
-    return interaction.message.reply(payload).catch(() => {
-      if (interaction.channel?.send) {
-        return interaction.channel.send(payload);
-      }
-      return null;
-    });
-  }
-
-  if (interaction.channel?.send) {
-    return interaction.channel.send(payload);
-  }
-
-  return null;
-}
-
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isButton()) return;
 
   try {
     const status = mc.getStatus();
 
-    // Acknowledge instantly so Discord does not show "This interaction failed".
-    await interaction.deferUpdate();
+    // Show the private "only you can see this" response.
+    await interaction.deferReply({ ephemeral: true });
 
     if (interaction.customId === 'panel_start') {
       if (status.mode !== 'offline') {
-        await sendPanelNotice(
-          interaction,
-          `The bot is already ${status.waitingForEmpty ? 'waiting for players to leave' : status.mode}.`,
-        );
-        return;
+        return interaction.editReply({
+          content: `The bot is already ${status.waitingForEmpty ? 'waiting for players to leave' : status.mode}.`,
+        });
       }
-
-      await sendPanelNotice(
-        interaction,
-        'Start requested. The panel will update as soon as the bot state changes.',
-      );
 
       mc.start();
       await schedulePanelRefresh();
-      return;
+
+      return interaction.editReply({
+        content: 'Start requested. The panel will update as soon as the bot state changes.',
+      });
     }
 
     if (interaction.customId === 'panel_stop') {
       if (status.mode === 'offline') {
-        await sendPanelNotice(interaction, 'The bot is already offline.');
-        return;
+        return interaction.editReply({
+          content: 'The bot is already offline.',
+        });
       }
-
-      await sendPanelNotice(
-        interaction,
-        'Stop requested. The panel will update as soon as the bot stops.',
-      );
 
       mc.stop();
       await schedulePanelRefresh();
-      return;
+
+      return interaction.editReply({
+        content: 'Stop requested. The panel will update as soon as the bot stops.',
+      });
     }
 
-    await sendPanelNotice(interaction, 'Unknown button action.');
+    return interaction.editReply({
+      content: 'Unknown button action.',
+    });
   } catch (err) {
     console.error('[Discord] button interaction failed:', err.message);
 
     try {
-      await sendPanelNotice(interaction, 'Something went wrong while processing that action.');
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({
+          content: 'Something went wrong while processing that action.',
+        });
+      } else {
+        await interaction.reply({
+          content: 'Something went wrong while processing that action.',
+          ephemeral: true,
+        });
+      }
     } catch (_) {
       // Ignore secondary message failures.
     }
