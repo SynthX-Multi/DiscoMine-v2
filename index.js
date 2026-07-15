@@ -269,47 +269,46 @@ client.on(Events.InteractionCreate, async (interaction) => {
   try {
     const status = mc.getStatus();
 
-    // Show the private "only you can see this" response.
-    await interaction.deferReply({ ephemeral: true });
-
+    // Reply immediately and privately.
     if (interaction.customId === 'panel_start') {
-      if (status.mode !== 'offline') {
-        return interaction.editReply({
-          content: `The bot is already ${status.waitingForEmpty ? 'waiting for players to leave' : status.mode}.`,
-        });
-      }
-
-      mc.start();
-      await schedulePanelRefresh();
-
-      return interaction.editReply({
-        content: 'Start requested. The panel will update as soon as the bot state changes.',
+      await interaction.reply({
+        content: status.mode !== 'offline'
+          ? `The bot is already ${status.waitingForEmpty ? 'waiting for players to leave' : status.mode}.`
+          : 'Start requested. The panel will update as soon as the bot state changes.',
+        ephemeral: true,
       });
+
+      if (status.mode === 'offline') {
+        mc.start();
+        await schedulePanelRefresh();
+      }
+      return;
     }
 
     if (interaction.customId === 'panel_stop') {
-      if (status.mode === 'offline') {
-        return interaction.editReply({
-          content: 'The bot is already offline.',
-        });
-      }
-
-      mc.stop();
-      await schedulePanelRefresh();
-
-      return interaction.editReply({
-        content: 'Stop requested. The panel will update as soon as the bot stops.',
+      await interaction.reply({
+        content: status.mode === 'offline'
+          ? 'The bot is already offline.'
+          : 'Stop requested. The panel will update as soon as the bot stops.',
+        ephemeral: true,
       });
+
+      if (status.mode !== 'offline') {
+        mc.stop();
+        await schedulePanelRefresh();
+      }
+      return;
     }
 
-    return interaction.editReply({
+    await interaction.reply({
       content: 'Unknown button action.',
+      ephemeral: true,
     });
   } catch (err) {
     console.error('[Discord] button interaction failed:', err.message);
 
     try {
-      if (interaction.deferred || interaction.replied) {
+      if (interaction.replied || interaction.deferred) {
         await interaction.editReply({
           content: 'Something went wrong while processing that action.',
         });
