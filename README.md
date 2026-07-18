@@ -1,6 +1,6 @@
-# DiscoMine 🎮
+# DiscoMine v2 🎮
 
-**DiscoMine** is a **24/7 Discord-controlled AFK bot** for Minecraft servers, powered by **Mineflayer** and designed for **WispByte** hosting.
+**DiscoMine** is a **24/7 Discord-controlled AFK bot** for Minecraft servers, powered by **Mineflayer** and designed for **Quaxly** hosting.
 
 It keeps your Minecraft server awake by automatically connecting an AFK bot whenever no real players are online. When someone joins, the bot disconnects so they have the server to themselves. DiscoMine also monitors player activity, manages idle shutdowns with LazyMC-style logic, and provides live server controls directly from its Discord control panel.
 
@@ -119,4 +119,4 @@ See the **[LICENSE](LICENSE)** file for full license details.
 
 ---
 
-**DiscoMine** • A Discord-powered AFK bot that keeps Minecraft servers online, automatically manages player activity, and provides simple server control through an interactive Discord panel.
+**DiscoMine v2** • A Discord-powered AFK bot that keeps Minecraft servers online, automatically manages player activity, and provides simple server control through an interactive Discord panel.
