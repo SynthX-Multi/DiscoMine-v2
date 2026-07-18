@@ -18,7 +18,7 @@
 require('dotenv').config();
 
 // ─────────────────────────────────────────────────────────────────────────────
-// config.js — Centralised config loader from .env / WispByte env variables
+// config.js — Centralised config loader from .env variables
 // ─────────────────────────────────────────────────────────────────────────────
 
 const config = {
@@ -29,7 +29,7 @@ const config = {
     statusChannelId: process.env.STATUS_CHANNEL_ID  || '',
   },
   server: {
-    ip:      process.env.MC_SERVER_IP                    || 'yourserver.falixsrv.me',
+    ip:      process.env.MC_SERVER_IP                    || 'yourserver.aternos.me',
     port:    parseInt(process.env.MC_SERVER_PORT || '25565', 10),
     version: process.env.MC_SERVER_VERSION               || null, // null = auto-detect
   },
@@ -45,7 +45,7 @@ const missing = [];
 if (!config.discord.token)    missing.push('DISCORD_TOKEN');
 if (!config.discord.clientId) missing.push('CLIENT_ID');
 if (!config.discord.guildId)  missing.push('GUILD_ID');
-if (!config.server.ip || config.server.ip === 'yourserver.falixsrv.me') missing.push('MC_SERVER_IP');
+if (!config.server.ip || config.server.ip === 'yourserver.aternos.me') missing.push('MC_SERVER_IP');
 
 if (missing.length > 0) {
   console.error(`[Config] ❌  Missing required env vars: ${missing.join(', ')}`);
