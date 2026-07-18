@@ -338,7 +338,7 @@ function createBot() {
       log('Bot', 'left because players were on, waiting for empty server');
       startWaitingForEmptyServer();
     } else {
-      log('Bot', 'disconnected unexpectedly, rejoining ASAP');
+      log('Bot', 'unexpected disconnection, attempting rejoin...');
       emitter.emit('kicked_reconnect');
       rejoinASAP();
     }
