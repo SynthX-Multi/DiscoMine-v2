@@ -1,6 +1,6 @@
 {
   "name": "discomine",
-  "version": "1.0.0",
+  "version": "2.2.3",
   "description": "An advanced discord bot that preserves a Minecraft server 24/7",
   "main": "index.js",
   "scripts": {
