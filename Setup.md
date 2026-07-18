@@ -162,28 +162,6 @@ Navigate to:
 Files
 ```
 
-Upload your entire DiscoMine project.
-
-You can upload everything except:
-
-```
-node_modules
-```
-
-The hosting provider will automatically install dependencies from `package.json`.
-
----
-
-# 📤 Step 5 — Upload DiscoMine
-
-Open your Quaxly server.
-
-Navigate to:
-
-```
-Files
-```
-
 Upload your project files:
 
 ```
@@ -216,7 +194,7 @@ See:
 ```
 
 > [!IMPORTANT]
-> Before starting the bot, make sure you've updated every value inside your `.env` file with the needed information for the bot.
+> Before starting the bot, make sure you've updated every value inside your `.env` file with the needed information for the bot. Ensure the file is named `.env` and not `.env.txt`.
 
 ---
 
@@ -313,7 +291,7 @@ Save your changes and restart the bot.
 
 Check that:
 
-- `index.js` is selected as the startup file.
+- `index.js` is set as the startup file.
 - Your `.env` file has been uploaded.
 - Every value in `.env` has been updated.
 - All project files were uploaded correctly.
