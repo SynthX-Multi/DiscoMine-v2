@@ -6,6 +6,10 @@ It keeps your Minecraft server awake by automatically connecting an AFK bot when
 
 ---
 
+For the lighter, more host-friendly version, open the `lite` branch of this repository. That build removes the extra weight from the full codebase and is the recommended option for many Discord bot hosting providers, shared containers, or low-resource VPS setups.
+
+---
+
 # ✨ Features
 
 | Feature                        | Description                                                                             |
@@ -21,15 +25,12 @@ It keeps your Minecraft server awake by automatically connecting an AFK bot when
 
 ---
 
-# 📦 v2.2.3 Changelog
+# 📦 v2.2.4 Changelog
 **Legend:**
 `[+]` Added `[-]` Removed `[!]` Fixed `[#]` Modified/Changed
 
-* `[+]` Added version counter
-* `[+]` Overall tweaks and optimisations
-* `[#]` Updated .md files
-* `[#]` Switched ping method from join/leave events to remote API status ping
-* `[#]` Changed from slash commands to bot panel
+* `[+]` Made a lite version of the project for easier deployment
+* `[!]` Fixed Setup.md issues
 
 ---
 
