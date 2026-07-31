@@ -1,38 +1,12 @@
 'use strict';
 
-// Copyright (C) 2026 DiscoMine Contributors
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-const {
-  Client,
-  GatewayIntentBits,
-  ActivityType,
-  Events,
-  REST,
-  Routes,
-} = require('discord.js');
+const { Client, GatewayIntentBits, ActivityType, Events } = require('discord.js');
 const fs = require('fs/promises');
 const path = require('path');
 
 const config = require('./config');
 const mc = require('./minecraft');
-const {
-  PANEL_TITLE,
-  buildPanelEmbed,
-  buildPanelRow,
-} = require('./panel');
+const { PANEL_TITLE, buildPanelEmbed, buildPanelRow } = require('./panel');
 
 const client = new Client({
   intents: [
@@ -44,21 +18,6 @@ const client = new Client({
 let panelMessage = null;
 let panelRefreshQueue = Promise.resolve();
 const PANEL_STATE_FILE = path.join(__dirname, '.panel-state.json');
-
-
-async function clearSlashCommands() {
-  const rest = new REST({ version: '10' }).setToken(config.discord.token);
-  try {
-    console.log('[Discord] removing slash commands...');
-    await rest.put(
-      Routes.applicationGuildCommands(config.discord.clientId, config.discord.guildId),
-      { body: [] },
-    );
-    console.log('[Discord] slash commands removed.');
-  } catch (err) {
-    console.error('[Discord] failed to remove slash commands:', err.message);
-  }
-}
 
 function buildStatusEmbed(status) {
   return buildPanelEmbed(status, config);
@@ -269,7 +228,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
   try {
     const status = mc.getStatus();
 
-    // Panel interaction reply
     if (interaction.customId === 'panel_start') {
       await interaction.reply({
         content: status.mode !== 'offline'
@@ -327,8 +285,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
 client.once(Events.ClientReady, async (c) => {
   console.log(`[Discord] logged in as ${c.user.tag}`);
 
-  await clearSlashCommands();
-
   const channel = await fetchStatusChannel();
   if (channel) {
     panelMessage = await resolvePanelMessage(channel);
@@ -339,7 +295,7 @@ client.once(Events.ClientReady, async (c) => {
   await schedulePanelRefresh();
 
   console.log('[Bot] starting live status panel...');
-  setInterval(updatePresence, 60_000);
+  setInterval(updatePresence, 120_000);
 });
 
 process.on('uncaughtException', (err) => {
