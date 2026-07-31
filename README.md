@@ -1,12 +1,12 @@
-# DiscoMine v2 🎮
+# DiscoMine Lite 🎮
 
-**DiscoMine** is a **24/7 Discord-controlled AFK bot** for Minecraft servers, powered by **Mineflayer** and designed for **Quaxly** hosting.
+**DiscoMine** is a **24/7 Discord-controlled AFK bot** for Minecraft servers, powered by **Mineflayer** and designed for **node.js** bot hosting.
 
 It keeps your Minecraft server awake by automatically connecting an AFK bot whenever no real players are online. When someone joins, the bot disconnects so they have the server to themselves. DiscoMine also monitors player activity, manages idle shutdowns with LazyMC-style logic, and provides live server controls directly from its Discord control panel.
 
 ---
 
-For the lighter, more host-friendly version, open the `lite` branch of this repository. That build removes the extra weight from the full codebase and is the recommended option for many Discord bot hosting providers, shared containers, or low-resource VPS setups.
+For the full-featured, more resource-intensive version, use the `main` branch of this repository. That build includes additional optional features and is recommended for paid or high-performance free Discord bot hosting providers, as well as dedicated containers or VPS deployments.
 
 ---
 
@@ -25,12 +25,12 @@ For the lighter, more host-friendly version, open the `lite` branch of this repo
 
 ---
 
-# 📦 v2.2.4 Changelog
+# 📦 v2.1.0 Changelog
 **Legend:**
 `[+]` Added `[-]` Removed `[!]` Fixed `[#]` Modified/Changed
 
-* `[+]` Made a lite version of the project for easier deployment
-* `[!]` Fixed Setup.md issues
+* `[#]` Optimised the code to be less resource-intensive
+* `[!]` Fixed README.md & Setup.md issues
 
 ---
 
@@ -132,4 +132,4 @@ See the **[LICENSE](LICENSE)** file for full license details.
 
 ---
 
-**DiscoMine v2** • A Discord-powered AFK bot that keeps Minecraft servers online, automatically manages player activity, and provides simple server control through an interactive Discord panel.
+**DiscoMine Lite** • A Discord-powered AFK bot that keeps Minecraft servers online, automatically manages player activity, and provides simple server control through an interactive Discord panel.
