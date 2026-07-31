@@ -1,13 +1,12 @@
 {
-  "name": "discomine",
-  "version": "2.2.3",
-  "description": "An advanced discord bot that preserves a Minecraft server 24/7",
+  "name": "discomine-lite",
+  "version": "2.1.0",
+  "description": "A Lightweight version of the Main DiscoMine",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "node index.js"
   },
-  "author": "",
   "license": "GPL-3.0-only",
   "engines": {
     "node": ">=22"
@@ -15,9 +14,7 @@
   "dependencies": {
     "discord.js": "^14.14.1",
     "dotenv": "^16.3.1",
-    "minecraft-data": "^3.108.0",
     "mineflayer": "^4.37.1",
-    "mineflayer-pathfinder": "^2.4.5",
     "minecraft-protocol": "^1.66.0"
   }
 }
