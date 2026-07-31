@@ -17,38 +17,39 @@
 
 require('dotenv').config();
 
-function clean(value) {
-  return String(value ?? '').trim().replace(/^['"]|['"]$/g, '');
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// config.js — Centralised config loader from .env variables
+// ─────────────────────────────────────────────────────────────────────────────
 
 const config = {
   discord: {
-    token: clean(process.env.DISCORD_TOKEN),
-    clientId: clean(process.env.CLIENT_ID),
-    guildId: clean(process.env.GUILD_ID),
-    statusChannelId: clean(process.env.STATUS_CHANNEL_ID),
+    token:           process.env.DISCORD_TOKEN      || '',
+    clientId:        process.env.CLIENT_ID          || '',
+    guildId:         process.env.GUILD_ID           || '',
+    statusChannelId: process.env.STATUS_CHANNEL_ID  || '',
   },
   server: {
-    ip: clean(process.env.MC_SERVER_IP) || 'yourserver.aternos.me',
-    port: parseInt(clean(process.env.MC_SERVER_PORT) || '25565', 10),
-    version: clean(process.env.MC_SERVER_VERSION) || null,
+    ip:      process.env.MC_SERVER_IP                    || 'yourserver.aternos.me',
+    port:    parseInt(process.env.MC_SERVER_PORT || '25565', 10),
+    version: process.env.MC_SERVER_VERSION               || null, // null = auto-detect
   },
   bot: {
-    username: clean(process.env.MC_USERNAME) || 'DiscoMineAFK',
-    password: clean(process.env.MC_PASSWORD),
-    auth: clean(process.env.MC_AUTH) || 'offline',
+    username: process.env.MC_USERNAME || 'DiscoMineAFK',
+    password: process.env.MC_PASSWORD || '',
+    auth:     process.env.MC_AUTH     || 'offline',
   },
 };
 
+// Validate required fields
 const missing = [];
-if (!config.discord.token) missing.push('DISCORD_TOKEN');
+if (!config.discord.token)    missing.push('DISCORD_TOKEN');
 if (!config.discord.clientId) missing.push('CLIENT_ID');
-if (!config.discord.guildId) missing.push('GUILD_ID');
+if (!config.discord.guildId)  missing.push('GUILD_ID');
 if (!config.server.ip || config.server.ip === 'yourserver.aternos.me') missing.push('MC_SERVER_IP');
 
 if (missing.length > 0) {
-  console.error(`[Config] Missing required env vars: ${missing.join(', ')}`);
-  console.error('[Config] Fill in your .env file and restart.');
+  console.error(`[Config] ❌  Missing required env vars: ${missing.join(', ')}`);
+  console.error('[Config]    Fill in your .env file and restart.');
   process.exit(1);
 }
 
