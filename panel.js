@@ -1,20 +1,5 @@
 'use strict';
 
-// Copyright (C) 2026 DiscoMine Contributors
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, Colors, EmbedBuilder } = require('discord.js');
 
 const PANEL_TITLE = 'DiscoMine Panel';
@@ -64,47 +49,21 @@ function buildPanelEmbed(status, config) {
   return new EmbedBuilder()
     .setTitle(`${meta.emoji} ${PANEL_TITLE}`)
     .setColor(meta.color)
-    .setDescription(
-      meta.blurb
-    )
+    .setDescription(meta.blurb)
     .addFields(
-      {
-        name: 'Server',
-        value: `\`${status.server}\``,
-        inline: true,
-      },
-      {
-        name: 'Players Online',
-        value: `${status.playerCount}`,
-        inline: true,
-      },
-      {
-        name: 'Uptime',
-        value: uptime,
-        inline: true,
-      },
-      {
-        name: 'Reconnect Attempts',
-        value: `${status.reconnectAttempts}`,
-        inline: true,
-      },
-      {
-        name: 'Bot Username',
-        value: `\`${config.bot.username}\``,
-        inline: true,
-      },
-      {
-        name: 'Mode',
-        value: `${meta.emoji} **${meta.label}**`,
-        inline: true,
-      },
+      { name: 'Server', value: `\`${status.server}\``, inline: true },
+      { name: 'Players Online', value: `${status.playerCount}`, inline: true },
+      { name: 'Uptime', value: uptime, inline: true },
+      { name: 'Reconnect Attempts', value: `${status.reconnectAttempts}`, inline: true },
+      { name: 'Bot Username', value: `\`${config.bot.username}\``, inline: true },
+      { name: 'Mode', value: `${meta.emoji} **${meta.label}**`, inline: true },
       ...(status.waitingForEmpty ? [{
         name: 'Waiting For',
         value: 'Players to leave',
         inline: true,
       }] : []),
     )
-    .setFooter({ text: 'rewritten by TheHolyJay • DiscoMine control panel' })
+    .setFooter({ text: 'DiscoMine Lite • control panel' })
     .setTimestamp();
 }
 
