@@ -82,7 +82,7 @@ Open the generated URL and invite the bot to your Discord server.
 
 # 🔑 Step 2 — Get Your Discord IDs
 
-DiscoMine needs your Discord Server ID and optionally a channel for status updates.
+DiscoMine needs your Discord Server ID and a channel for panel updates.
 
 ## Enable Developer Mode
 
@@ -108,7 +108,7 @@ Save this as:
 GUILD_ID
 ```
 
-## Copy a Status Channel ID (Optional)
+## Copy a Channel ID
 
 Right-click the channel you want DiscoMine to send status updates in.
 
@@ -146,7 +146,8 @@ These settings help ensure DiscoMine can connect successfully and remain compati
 1. Go to **https://quaxly.com/**
 2. Log into your panel.
 3. Create a new **Node.js** server.
-4. Wait until the server has finished provisioning.
+4. Leave the server default configuration values as-is.
+5. Wait until the server has finished provisioning.
 
 Once the server is ready, continue to the next step.
 
@@ -183,15 +184,7 @@ Instead of manually creating environment variables, simply upload your project's
 .env
 ```
 
-file into the root directory of your server.
-
-Need an example?
-
-See:
-
-```
-.env.example
-```
+file into the root directory of your server. Download it from the github repository and edit its values.
 
 > [!IMPORTANT]
 > Before starting the bot, make sure you've updated every value inside your `.env` file with the needed information for the bot. Ensure the file is named `.env` and not `.env.txt`.
