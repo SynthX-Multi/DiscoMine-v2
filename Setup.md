@@ -1,4 +1,4 @@
-# 🚀 Deploying DiscoMine v2
+# 🚀 Deploying DiscoMine Lite
 
 This guide walks you through deploying **DiscoMine** on a Discord bot hosting service. While the steps are generally the same across most hosts, this guide uses **Quaxly Hosting** as the example.
 
@@ -234,7 +234,7 @@ DiscoMine is now running 24/7.
 
 # 🎮 Using DiscoMine
 
-DiscoMine v2 now uses an interactive **Discord Bot Panel** instead of slash commands.
+DiscoMine Lite uses an interactive **Discord Bot Panel** instead of slash commands, similar to the main build.
 
 From the panel you can:
 
@@ -295,4 +295,4 @@ Check that:
 
 Your DiscoMine bot is now fully configured and running on your preferred Discord bot hosting provider.
 
-This guide used **Quaxly Hosting** as an example, but the same deployment process is similar on most Node.js Discord bot hosting services.
+This guide uses Quaxly Hosting as an example, but the deployment process is largely the same across most Node.js-compatible Discord bot hosting providers. Discomine Lite also supports a wider range of free bot hosting services than the main build, making it easier to deploy on more platforms.
