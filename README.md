@@ -25,12 +25,12 @@ For the full-featured, more resource-intensive version, use the `main` branch of
 
 ---
 
-# 📦 v2.1.0 Changelog
+# 📦 v2.1.5 Changelog
 **Legend:**
 `[+]` Added `[-]` Removed `[!]` Fixed `[#]` Modified/Changed
 
 * `[#]` Optimised the code to be less resource-intensive
-* `[!]` Fixed README.md & Setup.md issues
+* `[-]` Removed constant terminal messages
 
 ---
 
