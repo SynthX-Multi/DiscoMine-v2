@@ -4,8 +4,8 @@
   "description": "A Lightweight version of the Main DiscoMine",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js"
+    "start": "node --max-old-space-size=384 index.js",
+    "dev": "node --max-old-space-size=384 index.js"
   },
   "license": "GPL-3.0-only",
   "engines": {
