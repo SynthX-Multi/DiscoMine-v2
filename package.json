@@ -1,11 +1,12 @@
 {
   "name": "discomine",
-  "version": "2.2.4",
+  "version": "2.2.5",
   "description": "An advanced discord bot that preserves a Minecraft server 24/7",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "node index.js"
+    "dev": "node index.js",
+    "postinstall": "node trim-storage.js"
   },
   "author": "",
   "license": "GPL-3.0-only",
