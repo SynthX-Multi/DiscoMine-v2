@@ -83,6 +83,8 @@ async function startWaitingForEmptyServer() {
   state.waitingForEmpty = true;
   signalStateChange();
 
+  log('Bot', 'waiting for players to leave');
+
   const poll = async () => {
     if (state.manualStop || state.connected) return;
 
@@ -92,21 +94,19 @@ async function startWaitingForEmptyServer() {
       signalStateChange();
 
       if (status.online && status.playerCount <= 0) {
-        log('Bot', 'server is empty again, joining now');
+        log('Bot', 'all players have left, reconnecting now');
         state.waitingForEmpty = false;
         state.isReconnecting = false;
         signalStateChange();
         createBot();
         return;
       }
-
-      log('Bot', `waiting for players to leave (${status.playerCount} online)`);
     } catch (err) {
       log('Bot', `status ping failed while waiting: ${err.message}`);
     }
 
     if (!state.manualStop && !state.connected) {
-      state.waitingTimer = setTimeout(poll, 8000);
+      state.waitingTimer = setTimeout(poll, 20000);
     }
   };
 
@@ -198,12 +198,8 @@ function startAFK(bot) {
   state.afkTimers.push(setInterval(() => {
     if (!state.connected || !bot) return;
     try { bot.swingArm(); } catch (_) {}
-  }, 20000));
-
-  state.afkTimers.push(setInterval(() => {
-    if (!state.connected || !bot) return;
     try { bot.look(Math.random() * Math.PI * 2, (Math.random() - 0.5) * 0.4, true); } catch (_) {}
-  }, 15000));
+  }, 60000));
 }
 
 function checkAndActOnPlayers(bot) {
@@ -232,7 +228,7 @@ function checkAndActOnPlayers(bot) {
       emitter.emit('leftForPlayers', c);
       leaveForPlayers();
     }
-  }, 5000));
+  }, 10000));
 }
 
 function leaveForPlayers() {
