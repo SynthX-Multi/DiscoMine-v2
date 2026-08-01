@@ -1,11 +1,13 @@
 {
   "name": "discomine-lite",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "description": "A Lightweight version of the Main DiscoMine",
   "main": "index.js",
   "scripts": {
-    "start": "node --max-old-space-size=384 index.js",
-    "dev": "node --max-old-space-size=384 index.js"
+    "start": "node --max-old-space-size=320 index.js",
+    "dev": "node --max-old-space-size=320 index.js",
+    "postinstall": "node scripts/prune-minecraft-data.js",
+    "prune-data": "node scripts/prune-minecraft-data.js"
   },
   "license": "GPL-3.0-only",
   "engines": {
