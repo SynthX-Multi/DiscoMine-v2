@@ -25,12 +25,12 @@ For the lighter, more host-friendly version, open the `lite` branch of this repo
 
 ---
 
-# 📦 v2.2.4 Changelog
+# 📦 v2.2.5 Changelog
 **Legend:**
 `[+]` Added `[-]` Removed `[!]` Fixed `[#]` Modified/Changed
 
-* `[+]` Made a lite version of the project for easier deployment
-* `[!]` Fixed Setup.md issues
+* `[-]` Removed player online detection message
+* `[#]` Lowered resource-usage (theoretically)
 
 ---
 
