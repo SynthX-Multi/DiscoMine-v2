@@ -1,6 +1,6 @@
 'use strict';
 
-const { Client, GatewayIntentBits, ActivityType, Events } = require('discord.js');
+const { Client, GatewayIntentBits, ActivityType, Events, Options } = require('discord.js');
 const fs = require('fs/promises');
 const path = require('path');
 
@@ -13,6 +13,33 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
   ],
+  // This bot never reads message content and only ever needs the specific
+  // messages it explicitly fetches (the panel message, or the handful of
+  // candidates scanned once while resolving it). Capping these caches keeps
+  // long-running memory usage flat instead of growing with every channel
+  // the bot can see, which matters on small (512 MiB-class) hosts.
+  makeCache: Options.cacheWithLimits({
+    MessageManager: 25,
+    GuildMemberManager: 25,
+    UserManager: 25,
+    PresenceManager: 0,
+    ReactionManager: 0,
+    GuildStickerManager: 0,
+    GuildEmojiManager: 0,
+    GuildInviteManager: 0,
+    GuildScheduledEventManager: 0,
+    StageInstanceManager: 0,
+    ThreadManager: 0,
+    ThreadMemberManager: 0,
+    VoiceStateManager: 0,
+  }),
+  sweepers: {
+    ...Options.DefaultSweeperSettings,
+    messages: {
+      interval: 900,
+      lifetime: 900,
+    },
+  },
 });
 
 let panelMessage = null;
