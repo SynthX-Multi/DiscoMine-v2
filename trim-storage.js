@@ -87,7 +87,7 @@ function main() {
   const neededMax = projectSize - TARGET_MIN; // must not remove more than this
 
   const versions = fs.readdirSync(BEDROCK_DIR, { withFileTypes: true })
-    .filter((e) => e.isDirectory())
+    .filter((e) => e.isDirectory() && e.name !== 'common')
     .map((e) => {
       const full = path.join(BEDROCK_DIR, e.name);
       return { name: e.name, path: full, size: dirSize(full) };
