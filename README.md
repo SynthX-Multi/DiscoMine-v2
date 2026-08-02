@@ -25,11 +25,12 @@ For the lighter, more host-friendly version, open the `lite` branch of this repo
 
 ---
 
-# 📦 v2.2.5 Changelog
+# 📦 v2.2.6 Changelog
 **Legend:**
 `[+]` Added `[-]` Removed `[!]` Fixed `[#]` Modified/Changed
 
 * `[#]` Made project slightly less resource-intensive
+* `[!]` Fixed the bot self destruct risk
 
 ---
 
