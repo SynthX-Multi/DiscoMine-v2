@@ -25,11 +25,11 @@ For the full-featured, more resource-intensive version, use the `main` branch of
 
 ---
 
-# 📦 v2.1.6 Changelog
+# 📦 v2.1.7 Changelog
 **Legend:**
 `[+]` Added `[-]` Removed `[!]` Fixed `[#]` Modified/Changed
 
-* `[#]` Optimised the code to be less resource-intensive (credits to @vxalware-bedwars-owner)
+* `[!]` Fixed Bot not being able to rejoin
 
 ---
 
