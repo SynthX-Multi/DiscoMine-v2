@@ -40,7 +40,7 @@ Before you begin, download the DiscoMine project from this GitHub repository.
 
 Before deploying DiscoMine, you'll need to create a Discord application and bot.
 
-1. Visit the **Discord Developer Portal**: https://discord.com/developers/applications
+1. Open the **[Discord Developer Portal](https://discord.com/developers/applications)**
 2. Click **New Application**.
 3. Give your application a name (for example, **DiscoMine**) and click **Create**.
 
