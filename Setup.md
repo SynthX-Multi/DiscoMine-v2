@@ -83,10 +83,8 @@ Click **Save Changes**.
 
 1. Open **OAuth2 → URL Generator**.
 2. Under **Scopes**, select:
-
    * `bot`
 3. Under **Bot Permissions**, enable:
-
    * Send Messages
    * Embed Links
    * Read Message History
@@ -126,7 +124,7 @@ GUILD_ID
 
 ## Copy a Channel ID
 
-Right-click the channel where you want DiscoMine to post updates.
+Right-click the channel where you want to put the DiscoMine panel.
 
 Select:
 
@@ -202,6 +200,20 @@ After editing the file, upload it to your server as well.
 > [!IMPORTANT]
 > Before starting the bot, make sure **every value** inside your `.env` file has been updated. Ensure the file is named `.env` and **not** `.env.txt` or anything similar.
 
+Your server should now have the following structure:
+
+```text
+/
+├── .env
+├── index.js
+├── panel.js
+├── config.js
+├── minecraft.js
+├── package.json
+└── scripts/
+    └── prune-minecraft-data.js
+```
+
 ---
 
 # 🚀 Step 8 — Start DiscoMine
@@ -257,6 +269,7 @@ Verify that:
 * Your server IP and port are correct.
 * Offline/Cracked Mode is enabled if you're using offline authentication.
 * Your server is running Paper.
+* You have installed the ViaVersion and ViaBackwards plugins.
 
 ---
 
