@@ -159,7 +159,7 @@ These settings help ensure DiscoMine can connect successfully and remain compati
 
 # ☁️ Step 5 — Create a Quaxly Hosting Server
 
-1. Go to **https://quaxly.com/**
+1. Go to **[https://quaxly.com/](https://quaxly.com/)**
 2. Log into your hosting panel.
 3. Create a new **Node.js** server.
 4. Leave the default server settings unless you have a reason to change them.
@@ -204,7 +204,7 @@ After editing the file, upload it to your server as well.
 
 ---
 
-# 🚀 Step 9 — Start DiscoMine
+# 🚀 Step 8 — Start DiscoMine
 
 Before starting the bot:
 
