@@ -6,7 +6,7 @@ It keeps your Minecraft server awake by automatically connecting an AFK bot when
 
 ---
 
-For the full-featured, more resource-intensive version, use the `main` branch of this repository. That build includes additional optional features and is recommended for paid or high-performance free Discord bot hosting providers, as well as dedicated containers or VPS deployments.
+For the full-featured, more resource-intensive version, use the `main` branch of this repository. The Main build includes additional optional features and is recommended for paid or high-performance free Discord bot hosting providers, as well as dedicated containers or VPS deployments.
 
 ---
 
