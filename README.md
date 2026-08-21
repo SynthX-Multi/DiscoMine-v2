@@ -22,15 +22,17 @@ For the lighter, more host-friendly version, open the `lite` branch of this repo
 | **Automatic reconnects**       | Uses exponential backoff and continuously retries until successful or manually stopped. |
 | **Discord presence**           | Displays the current player count in the bot's status.                                  |
 | **Status channel**             | Automatically posts server events and status updates to Discord.                        |
+| **Auto shutdown**              | Automatically shuts the bot down at your given time.                                    |
+| **Interleaving**               | Automatically leaves and rejoins at your given interval time to bypass kicks.           |
 
 ---
 
-# 📦 v2.2.6 Changelog
+# 📦 v2.3.6 Changelog
 **Legend:**
 `[+]` Added `[-]` Removed `[!]` Fixed `[#]` Modified/Changed
 
-* `[#]` Made project slightly less resource-intensive
-* `[!]` Fixed the bot self destruct risk
+* `[+]` Added Auto shutdown feature
+* `[+]` Added Interleaving bypass feature
 
 ---
 
@@ -79,18 +81,22 @@ DiscoMine automatically manages your server:
 
 All configuration is handled through environment variables—no code changes required.
 
-| Variable            | Default        | Description                                           |
-| ------------------- | -------------- | ----------------------------------------------------- |
-| `DISCORD_TOKEN`     | **Required**   | Discord bot token                                     |
-| `CLIENT_ID`         | **Required**   | Discord application client ID                         |
-| `GUILD_ID`          | **Required**   | Discord server ID                                     |
-| `MC_SERVER_IP`      | **Required**   | Minecraft server address                              |
-| `MC_SERVER_PORT`    | `25565`        | Minecraft server port                                 |
-| `MC_SERVER_VERSION` | `Auto`         | Minecraft server version.                             |
-| `MC_USERNAME`       | `DiscoMineAFK` | AFK bot username                                      |
-| `MC_PASSWORD`       | *(empty)*      | Leave empty for offline/cracked servers               |
-| `MC_AUTH`           | `offline`      | `offline` or `microsoft`                              |
-| `STATUS_CHANNEL_ID` | **Required**   | Channel used for the control panel and status updates |
+| Variable                      | Default        | Description                                                                 |
+| ----------------------------- | -------------- | --------------------------------------------------------------------------- |
+| `DISCORD_TOKEN`               | **Required**   | Discord bot token                                                           |
+| `CLIENT_ID`                   | **Required**   | Discord application client ID                                               |
+| `GUILD_ID`                    | **Required**   | Discord server ID                                                           |
+| `MC_SERVER_IP`                | **Required**   | Minecraft server address                                                    |
+| `MC_SERVER_PORT`              | `25565`        | Minecraft server port                                                       |
+| `MC_SERVER_VERSION`           | `Auto`         | Minecraft server version                                                    |
+| `MC_USERNAME`                 | `DiscoMineAFK` | AFK bot username                                                            |
+| `MC_PASSWORD`                 | *(empty)*      | Leave empty for offline/cracked servers                                     |
+| `MC_AUTH`                     | `offline`      | `offline` or `microsoft`                                                    |
+| `STATUS_CHANNEL_ID`           | **Required**   | Channel used for the control panel and status updates                       |
+| `AUTO_SHUTDOWN_ENABLED`       | `false`        | Enables automatic bot shutdown at the configured time                       |
+| `AUTO_SHUTDOWN_TIME`          | `04:00`        | Daily time to automatically shut down the bot, using 24-hour `HH:MM` format |
+| `INTERLEAVING_ENABLED`        | `false`        | Enables periodic Minecraft disconnect/reconnect cycles                      |
+| `INTERLEAVING_INTERVAL_HOURS` | `3`            | Number of hours between interleaving cycles                                 |
 
 ---
 
