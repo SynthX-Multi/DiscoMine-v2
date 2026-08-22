@@ -120,11 +120,6 @@ async function startWaitingForEmptyServer() {
   state.waitingForEmpty = true;
   signalStateChange();
 
-  // Seed with whatever the caller already knows/logged (e.g. "someone is in
-  // the server (N players)...") so the first poll doesn't immediately repeat
-  // the same news. null means "we don't know yet / it was empty before".
-  let lastLoggedCount = state.playerCount > 0 ? state.playerCount : null;
-
   const poll = async () => {
     if (state.manualStop || state.connected) return;
 
@@ -134,7 +129,7 @@ async function startWaitingForEmptyServer() {
       signalStateChange();
 
       if (status.online && status.playerCount <= 0) {
-        log('Bot', lastLoggedCount !== null ? 'everyone left, rejoining' : 'server is empty, rejoining');
+        log('Bot', 'server is empty again, joining now');
         state.waitingForEmpty = false;
         state.isReconnecting = false;
         signalStateChange();
@@ -142,14 +137,7 @@ async function startWaitingForEmptyServer() {
         return;
       }
 
-      // Only log when someone new joins (count goes up from what we last
-      // announced) — not on every poll while we're just sitting here waiting.
-      if (status.online && (lastLoggedCount === null || status.playerCount > lastLoggedCount)) {
-        log('Bot', `someone joined (${status.playerCount} online), waiting for them to leave`);
-        lastLoggedCount = status.playerCount;
-      } else if (status.online) {
-        lastLoggedCount = status.playerCount;
-      }
+      log('Bot', `waiting for players to leave (${status.playerCount} online)`);
     } catch (err) {
       log('Bot', `status ping failed while waiting: ${err.message}`);
     }
