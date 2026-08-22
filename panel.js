@@ -37,6 +37,16 @@ function getModeMeta(mode, status = {}) {
         blurb: 'Bot is in the server and holding the slot.',
       };
     case 'reconnecting':
+      if (status.interleaving) {
+        return {
+          label: 'Interleaving',
+          emoji: '🔁',
+          color: Colors.Blurple,
+          blurb: status.waitingForEmpty
+            ? 'Bot disconnected for a scheduled interleave cycle and is checking the server before rejoining.'
+            : 'Bot is disconnecting as part of a scheduled interleave cycle.',
+        };
+      }
       return {
         label: 'Reconnecting',
         emoji: '🟡',
@@ -56,7 +66,36 @@ function getModeMeta(mode, status = {}) {
   }
 }
 
-function buildPanelEmbed(status, config) {
+function discordTimestamp(msEpoch, style = 'R') {
+  if (!msEpoch) return null;
+  return `<t:${Math.floor(msEpoch / 1000)}:${style}>`;
+}
+
+function buildInterleavingValue(status, config) {
+  const feature = config.features?.interleaving;
+  if (!feature?.enabled) return 'Disabled';
+
+  if (status.interleaving) {
+    return status.waitingForEmpty
+      ? 'In progress — checking server before rejoining'
+      : 'In progress — disconnecting';
+  }
+
+  const next = discordTimestamp(status.nextInterleaveAt);
+  return next
+    ? `Every ${feature.intervalHours}h • next ${next}`
+    : `Every ${feature.intervalHours}h`;
+}
+
+function buildAutoShutdownValue(config, extra) {
+  const feature = config.features?.autoShutdown;
+  if (!feature?.enabled) return 'Disabled';
+
+  const next = discordTimestamp(extra?.nextAutoShutdownAt);
+  return next ? `Daily at ${feature.time} • next ${next}` : `Daily at ${feature.time}`;
+}
+
+function buildPanelEmbed(status, config, extra = {}) {
   const mode = status.mode || 'offline';
   const meta = getModeMeta(mode, status);
   const uptime = mode === 'online' ? formatUptime(status.uptime) : '—';
@@ -98,7 +137,17 @@ function buildPanelEmbed(status, config) {
         value: `${meta.emoji} **${meta.label}**`,
         inline: true,
       },
-      ...(status.waitingForEmpty ? [{
+      {
+        name: 'Interleaving',
+        value: buildInterleavingValue(status, config),
+        inline: true,
+      },
+      {
+        name: 'Auto Shutdown',
+        value: buildAutoShutdownValue(config, extra),
+        inline: true,
+      },
+      ...(status.waitingForEmpty && !status.interleaving ? [{
         name: 'Waiting For',
         value: 'Players to leave',
         inline: true,

@@ -36,6 +36,9 @@ const state = {
   statusPollTimer: null,
   reconnectTimer: null,
   connectionTimer: null,
+  interleaveTimer: null,
+  interleaving: false,
+  nextInterleaveAt: null,
 };
 
 const emitter = new EventEmitter();
@@ -67,6 +70,11 @@ function clearTimers() {
   if (state.connectionTimer) {
     clearTimeout(state.connectionTimer);
     state.connectionTimer = null;
+  }
+  if (state.interleaveTimer) {
+    clearTimeout(state.interleaveTimer);
+    state.interleaveTimer = null;
+    state.nextInterleaveAt = null;
   }
 }
 
@@ -112,6 +120,11 @@ async function startWaitingForEmptyServer() {
   state.waitingForEmpty = true;
   signalStateChange();
 
+  // Seed with whatever the caller already knows/logged (e.g. "someone is in
+  // the server (N players)...") so the first poll doesn't immediately repeat
+  // the same news. null means "we don't know yet / it was empty before".
+  let lastLoggedCount = state.playerCount > 0 ? state.playerCount : null;
+
   const poll = async () => {
     if (state.manualStop || state.connected) return;
 
@@ -121,7 +134,7 @@ async function startWaitingForEmptyServer() {
       signalStateChange();
 
       if (status.online && status.playerCount <= 0) {
-        log('Bot', 'server is empty again, joining now');
+        log('Bot', lastLoggedCount !== null ? 'everyone left, rejoining' : 'server is empty, rejoining');
         state.waitingForEmpty = false;
         state.isReconnecting = false;
         signalStateChange();
@@ -129,7 +142,14 @@ async function startWaitingForEmptyServer() {
         return;
       }
 
-      log('Bot', `waiting for players to leave (${status.playerCount} online)`);
+      // Only log when someone new joins (count goes up from what we last
+      // announced) — not on every poll while we're just sitting here waiting.
+      if (status.online && (lastLoggedCount === null || status.playerCount > lastLoggedCount)) {
+        log('Bot', `someone joined (${status.playerCount} online), waiting for them to leave`);
+        lastLoggedCount = status.playerCount;
+      } else if (status.online) {
+        lastLoggedCount = status.playerCount;
+      }
     } catch (err) {
       log('Bot', `status ping failed while waiting: ${err.message}`);
     }
@@ -152,6 +172,7 @@ async function start() {
   state.manualStop = false;
   state.leftForPlayers = false;
   state.waitingForEmpty = false;
+  state.interleaving = false;
   state.reconnectAttempts = 0;
   state.connecting = true;
   signalStateChange();
@@ -185,6 +206,7 @@ function stop() {
   state.leftForPlayers = false;
   state.waitingForEmpty = false;
   state.connecting = false;
+  state.interleaving = false;
   clearTimers();
   clearIntervals();
 
@@ -218,6 +240,8 @@ function getStatus() {
       ? Math.floor((Date.now() - state.startTime) / 1000)
       : 0,
     reconnectAttempts: state.reconnectAttempts,
+    interleaving: state.interleaving,
+    nextInterleaveAt: state.nextInterleaveAt,
     server: `${config.server.ip}:${config.server.port}`,
   };
 }
@@ -298,6 +322,7 @@ function createBot() {
     state.isReconnecting = false;
     state.waitingForEmpty = false;
     state.leftForPlayers = false;
+    state.interleaving = false;
 
     log('Bot', `joined! version ${bot.version}, watching players`);
     signalStateChange();
@@ -311,6 +336,7 @@ function createBot() {
     movements.fallDamageCost = 9999;
 
     setTimeout(() => checkAndActOnPlayers(bot, movements), 2_000);
+    scheduleInterleaving();
   });
 
   bot.on('kicked', (reason) => {
@@ -337,6 +363,14 @@ function createBot() {
     if (state.leftForPlayers) {
       log('Bot', 'left because players were on, waiting for empty server');
       startWaitingForEmptyServer();
+    } else if (state.interleaving) {
+      log('Bot', 'interleaving disconnect complete, checking server before rejoining');
+      // NOTE: state.interleaving stays true here on purpose. The interleave
+      // cycle isn't done until the bot has actually rejoined (cleared on
+      // spawn) — clearing it here made the flag go false for the entire
+      // wait-for-empty/rejoin window, which is most of the cycle. That's
+      // also why the panel could never show an "interleaving" state.
+      startWaitingForEmptyServer();
     } else {
       log('Bot', 'unexpected disconnection, attempting rejoin...');
       emitter.emit('kicked_reconnect');
@@ -347,6 +381,39 @@ function createBot() {
   bot.on('error', (err) => {
     log('Bot', `error: ${err.message}`);
   });
+}
+
+function scheduleInterleaving() {
+  if (!config.features.interleaving.enabled) return;
+
+  const delayMs = config.features.interleaving.intervalHours * 60 * 60 * 1000;
+  state.nextInterleaveAt = Date.now() + delayMs;
+  state.interleaveTimer = setTimeout(() => {
+    state.interleaveTimer = null;
+    state.nextInterleaveAt = null;
+
+    if (!state.connected || !state.bot || state.manualStop) return;
+
+    state.interleaving = true;
+    state.connecting = false;
+    state.waitingForEmpty = true;
+    clearIntervals();
+    signalStateChange();
+
+    log(
+      'Bot',
+      `interleaving after ${config.features.interleaving.intervalHours} hour(s); disconnecting and checking server before rejoining`,
+    );
+
+    try {
+      state.bot.end('scheduled interleaving');
+    } catch (err) {
+      log('Bot', `error during scheduled interleaving: ${err.message}`);
+      state.interleaving = false;
+      state.waitingForEmpty = false;
+      if (!state.manualStop) rejoinASAP();
+    }
+  }, delayMs);
 }
 
 function startAntiAFK(bot, movements) {

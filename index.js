@@ -43,6 +43,7 @@ const client = new Client({
 
 let panelMessage = null;
 let panelRefreshQueue = Promise.resolve();
+let nextAutoShutdownAt = null;
 const PANEL_STATE_FILE = path.join(__dirname, '.panel-state.json');
 
 
@@ -60,8 +61,86 @@ async function clearSlashCommands() {
   }
 }
 
+// Computes the next Date at which `hours:minutes` occurs.
+// If offsetMinutes is null, `hours:minutes` is interpreted in the host
+// process's own local timezone (e.g. whatever TZ the server/container uses).
+// If offsetMinutes is a number, `hours:minutes` is interpreted as a fixed
+// UTC offset (in minutes east of UTC) instead, regardless of the host's TZ.
+function computeNextShutdownTarget(hours, minutes, offsetMinutes, now = new Date()) {
+  if (offsetMinutes == null) {
+    const target = new Date(now);
+    target.setHours(hours, minutes, 0, 0);
+    if (target <= now) {
+      target.setDate(target.getDate() + 1);
+    }
+    return target;
+  }
+
+  // Shift "now" into the target offset so its UTC calendar fields
+  // (year/month/day) reflect that offset's current wall-clock date.
+  const shiftedNow = new Date(now.getTime() + offsetMinutes * 60_000);
+  const wallClockMs = Date.UTC(
+    shiftedNow.getUTCFullYear(),
+    shiftedNow.getUTCMonth(),
+    shiftedNow.getUTCDate(),
+    hours,
+    minutes,
+    0,
+    0,
+  );
+
+  let targetMs = wallClockMs - offsetMinutes * 60_000;
+  if (targetMs <= now.getTime()) {
+    targetMs += 24 * 60 * 60 * 1000;
+  }
+  return new Date(targetMs);
+}
+
+function formatOffset(offsetMinutes) {
+  const sign = offsetMinutes < 0 ? '-' : '+';
+  const abs = Math.abs(offsetMinutes);
+  const h = String(Math.floor(abs / 60)).padStart(2, '0');
+  const m = String(abs % 60).padStart(2, '0');
+  return `UTC${sign}${h}:${m}`;
+}
+
+function scheduleAutomaticShutdown() {
+  if (!config.features.autoShutdown.enabled) {
+    console.log('[AutoShutdown] disabled');
+    return;
+  }
+
+  const [hours, minutes] = config.features.autoShutdown.time.split(':').map(Number);
+  const { utcOffsetMinutes } = config.features.autoShutdown;
+
+  const scheduleNext = () => {
+    const now = new Date();
+    const target = computeNextShutdownTarget(hours, minutes, utcOffsetMinutes, now);
+
+    const delay = target.getTime() - now.getTime();
+    nextAutoShutdownAt = target.getTime();
+    const tzLabel = utcOffsetMinutes == null ? 'server local time' : formatOffset(utcOffsetMinutes);
+    console.log(`[AutoShutdown] next shutdown scheduled for ${target.toLocaleString()} (${config.features.autoShutdown.time} ${tzLabel})`);
+    schedulePanelRefresh();
+
+    setTimeout(() => {
+      const status = mc.getStatus();
+      if (status.mode !== 'offline') {
+        console.log('[AutoShutdown] scheduled shutdown time reached; stopping Minecraft bot');
+        mc.stop();
+      } else {
+        console.log('[AutoShutdown] scheduled shutdown time reached; bot is already offline');
+      }
+
+      scheduleNext();
+    }, delay);
+  };
+
+  scheduleNext();
+}
+
 function buildStatusEmbed(status) {
-  return buildPanelEmbed(status, config);
+  return buildPanelEmbed(status, config, { nextAutoShutdownAt });
 }
 
 function buildStatusCard(status) {
@@ -210,14 +289,17 @@ function updatePresence() {
       }],
     });
   } else if (status.mode === 'reconnecting') {
+    let name;
+    if (status.interleaving) {
+      name = `interleaving on ${config.server.ip}`;
+    } else if (status.waitingForEmpty) {
+      name = `waiting for players to leave on ${config.server.ip}`;
+    } else {
+      name = `reconnecting to ${config.server.ip}`;
+    }
     client.user.setPresence({
       status: 'idle',
-      activities: [{
-        name: status.waitingForEmpty
-          ? `waiting for players to leave on ${config.server.ip}`
-          : `reconnecting to ${config.server.ip}`,
-        type: ActivityType.Watching,
-      }],
+      activities: [{ name, type: ActivityType.Watching }],
     });
   } else {
     client.user.setPresence({
@@ -337,6 +419,7 @@ client.once(Events.ClientReady, async (c) => {
   updatePresence();
   mc.start();
   await schedulePanelRefresh();
+  scheduleAutomaticShutdown();
 
   console.log('[Bot] starting live status panel...');
   setInterval(updatePresence, 60_000);
