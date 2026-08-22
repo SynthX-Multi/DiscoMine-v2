@@ -33,6 +33,7 @@ For the lighter, more host-friendly version, open the `lite` branch of this repo
 
 * `[+]` Added Auto shutdown feature
 * `[+]` Added Interleaving bypass feature
+* `[!]` Fixed 8-second log flood
 
 ---
 
