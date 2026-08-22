@@ -96,6 +96,7 @@ All configuration is handled through environment variables—no code changes req
 | `STATUS_CHANNEL_ID`           | **Required**   | Channel used for the control panel and status updates                       |
 | `AUTO_SHUTDOWN_ENABLED`       | `false`        | Enables automatic bot shutdown at the configured time                       |
 | `AUTO_SHUTDOWN_TIME`          | `04:00`        | Daily time to automatically shut down the bot, using 24-hour `HH:MM` format |
+| `AUTO_SHUTDOWN_UTC_OFFSET`    | *(empty)*      | UTC offset for auto shutdown (Leave empty to use host's timezone instead    |
 | `INTERLEAVING_ENABLED`        | `false`        | Enables periodic Minecraft disconnect/reconnect cycles                      |
 | `INTERLEAVING_INTERVAL_HOURS` | `3`            | Number of hours between interleaving cycles                                 |
 
