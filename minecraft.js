@@ -294,7 +294,7 @@ function createBot() {
       host: config.server.ip,
       port: config.server.port,
       version: mcVersion,
-      hideErrors: false,
+      hideErrors: true,
       checkTimeoutInterval: 600000,
     });
   } catch (err) {
