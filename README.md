@@ -27,13 +27,14 @@ For the lighter, more host-friendly version, open the `lite` branch of this repo
 
 ---
 
-# 📦 v2.3.8 Changelog
+# 📦 v2.4.0 Changelog
 **Legend:**
 `[+]` Added `[-]` Removed `[!]` Fixed `[#]` Modified/Changed
 
 * `[#]` Utilised flags instead of ephemeral
 * `[-]` Removed redundant console logs
 * `[!]` Fixed PartialReadError log floods
+* `[!]` Fixed potential bug which can cause auto shutdown to fail due to conflict with interleaving
 
 ---
 
