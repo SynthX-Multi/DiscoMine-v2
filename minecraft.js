@@ -134,6 +134,7 @@ async function startWaitingForEmptyServer() {
       signalStateChange();
 
       if (status.online && status.playerCount <= 0) {
+        if (state.manualStop || state.connected) return;
         log('Bot', lastLoggedCount !== null ? 'everyone left, rejoining' : 'server is empty, rejoining');
         state.waitingForEmpty = false;
         state.isReconnecting = false;
