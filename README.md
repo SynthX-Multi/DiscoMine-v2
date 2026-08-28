@@ -33,6 +33,7 @@ For the lighter, more host-friendly version, open the `lite` branch of this repo
 
 * `[#]` Utilised flags instead of ephemeral
 * `[-]` Removed redundant console logs
+* `[!]` Fixed PartialReadError log floods
 
 ---
 
