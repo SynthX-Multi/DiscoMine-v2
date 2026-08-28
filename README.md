@@ -25,11 +25,13 @@ For the full-featured, more resource-intensive version, use the `main` branch of
 
 ---
 
-# 📦 v2.1.7 Changelog
+# 📦 v2.2.0 Changelog
 **Legend:**
 `[+]` Added `[-]` Removed `[!]` Fixed `[#]` Modified/Changed
 
-* `[!]` Fixed Bot not being able to rejoin
+* `[#]` Utilised flags instead of ephemeral
+* `[-]` Removed redundant console logs
+* `[!]` Fixed eval error log lines
 
 ---
 
