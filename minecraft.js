@@ -171,7 +171,6 @@ function stop() {
   state.connected = false;
   state.isReconnecting = false;
   state.playerCount = 0;
-  log('Bot', 'stopped');
   signalStateChange();
   emitter.emit('stopped');
 }
@@ -210,7 +209,7 @@ function checkAndActOnPlayers(bot) {
   signalStateChange();
 
   if (count > 0) {
-    log('Bot', `someone is in the server (${count} players), leaving to save energy`);
+    log('Bot', 'leaving...');
     emitter.emit('leftForPlayers', count);
     leaveForPlayers();
     return;
@@ -224,7 +223,7 @@ function checkAndActOnPlayers(bot) {
     state.playerCount = c;
     signalStateChange();
     if (c > 0) {
-      log('Bot', `someone joined (${c} players), leaving`);
+      log('Bot', 'leaving...');
       emitter.emit('leftForPlayers', c);
       leaveForPlayers();
     }
@@ -295,7 +294,7 @@ function createBot() {
       host: config.server.ip,
       port: config.server.port,
       version: mcVersion,
-      hideErrors: false,
+      hideErrors: true,
       checkTimeoutInterval: 600000,
     });
   } catch (err) {
@@ -357,7 +356,6 @@ function createBot() {
   });
 
   bot.on('end', (reason) => {
-    log('Bot', `disconnected: ${reason || 'unknown'}`);
     state.connected = false;
     state.connecting = false;
     state.playerCount = 0;
