@@ -134,6 +134,7 @@ async function startWaitingForEmptyServer() {
       signalStateChange();
 
       if (status.online && status.playerCount <= 0) {
+        if (state.manualStop || state.connected) return;
         log('Bot', lastLoggedCount !== null ? 'everyone left, rejoining' : 'server is empty, rejoining');
         state.waitingForEmpty = false;
         state.isReconnecting = false;
@@ -223,7 +224,6 @@ function stop() {
   state.connected = false;
   state.isReconnecting = false;
   state.playerCount = 0;
-  log('Bot', 'stopped');
   signalStateChange();
   emitter.emit('stopped');
 }
@@ -279,7 +279,7 @@ function createBot() {
       host: config.server.ip,
       port: config.server.port,
       version: mcVersion,
-      hideErrors: false,
+      hideErrors: true,
       checkTimeoutInterval: 600000,
     });
     bot.loadPlugin(pathfinder);
@@ -350,7 +350,6 @@ function createBot() {
   });
 
   bot.on('end', (reason) => {
-    log('Bot', `disconnected: ${reason || 'unknown'}`);
     state.connected = false;
     state.connecting = false;
     state.playerCount = 0;
@@ -476,8 +475,6 @@ function startAntiAFK(bot, movements) {
       }, 100);
     } catch (_) { }
   }, 90_000 + Math.random() * 180_000);
-
-  log('AntiAFK', 'anti AFK started');
 }
 
 function checkAndActOnPlayers(bot, movements) {
@@ -490,7 +487,7 @@ function checkAndActOnPlayers(bot, movements) {
   signalStateChange();
 
   if (count > 0) {
-    log('Bot', `someone is in the server (${count} players), leaving to save energy`);
+    log('Bot', 'leaving...');
     emitter.emit('leftForPlayers', count);
     leaveForPlayers();
   } else {
@@ -504,7 +501,7 @@ function checkAndActOnPlayers(bot, movements) {
       state.playerCount = c;
       signalStateChange();
       if (c > 0) {
-        log('Bot', `someone joined (${c} players), leaving`);
+        log('Bot', 'leaving...');
         emitter.emit('leftForPlayers', c);
         leaveForPlayers();
       }

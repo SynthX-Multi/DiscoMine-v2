@@ -22,6 +22,7 @@ const {
   Events,
   REST,
   Routes,
+  MessageFlags,
 } = require('discord.js');
 const fs = require('fs/promises');
 const path = require('path');
@@ -50,12 +51,10 @@ const PANEL_STATE_FILE = path.join(__dirname, '.panel-state.json');
 async function clearSlashCommands() {
   const rest = new REST({ version: '10' }).setToken(config.discord.token);
   try {
-    console.log('[Discord] removing slash commands...');
     await rest.put(
       Routes.applicationGuildCommands(config.discord.clientId, config.discord.guildId),
       { body: [] },
     );
-    console.log('[Discord] slash commands removed.');
   } catch (err) {
     console.error('[Discord] failed to remove slash commands:', err.message);
   }
@@ -317,10 +316,6 @@ mc.emitter.on('stateChanged', () => {
   schedulePanelRefresh();
 });
 
-mc.emitter.on('connected', ({ version }) => {
-  console.log(`[Bot] connected using version ${version}`);
-});
-
 mc.emitter.on('leftForPlayers', (count) => {
   console.log(`[Bot] left because ${count} player(s) were online`);
 });
@@ -331,14 +326,6 @@ mc.emitter.on('kicked', (reason) => {
 
 mc.emitter.on('kicked_reconnect', () => {
   console.log('[Bot] reconnecting after disconnect');
-});
-
-mc.emitter.on('disconnected', (reason) => {
-  console.log(`[Bot] disconnected: ${reason || 'unknown'}`);
-});
-
-mc.emitter.on('reconnecting', ({ attempt, delayMs }) => {
-  console.log(`[Bot] rejoin attempt #${attempt} in ${(delayMs / 1000).toFixed(1)}s`);
 });
 
 mc.emitter.on('stopped', () => {
@@ -357,7 +344,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         content: status.mode !== 'offline'
           ? `The bot is already ${status.waitingForEmpty ? 'waiting for players to leave' : status.mode}.`
           : 'Start requested. The panel will update as soon as the bot state changes.',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
 
       if (status.mode === 'offline') {
@@ -372,7 +359,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         content: status.mode === 'offline'
           ? 'The bot is already offline.'
           : 'Stop requested. The panel will update as soon as the bot stops.',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
 
       if (status.mode !== 'offline') {
@@ -384,7 +371,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     await interaction.reply({
       content: 'Unknown button action.',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   } catch (err) {
     console.error('[Discord] button interaction failed:', err.message);
@@ -397,7 +384,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       } else {
         await interaction.reply({
           content: 'Something went wrong while processing that action.',
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
     } catch (_) {
